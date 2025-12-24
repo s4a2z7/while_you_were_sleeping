@@ -1,0 +1,36 @@
+2025-12-25 00:28:17,501 - INFO - ============================================================
+2025-12-25 00:28:17,504 - INFO - ============================================================
+2025-12-25 00:28:17,504 - INFO - 
+[1/3] 화제 종목 조회 중...
+2025-12-25 00:28:17,528 - ERROR - Traceback (most recent call last):
+  File "C:\Users\LG\Desktop\cursor pro+\while-you-were-sleeping-dashboard\run_daily_briefing.py", line 35, in run_briefing
+    result = subprocess.run(
+        [sys.executable, "-m", "services.screener_service"],
+    ...<2 lines>...
+        text=True
+    )
+  File "C:\Python314\Lib\subprocess.py", line 554, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1038, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1552, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+NotADirectoryError: [WinError 267] 디렉터리 이름이 올바르지 않습니다
+
