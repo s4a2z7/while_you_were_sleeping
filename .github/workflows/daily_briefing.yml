@@ -33,17 +33,17 @@ jobs:
 
       - name: Send Email
         env:
-          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
         run: |
           cd backend
-          echo "이메일 설정 확인:"
-          echo "SENDER_EMAIL=$SENDER_EMAIL"
-          echo "SMTP_PORT=$SMTP_PORT"
+          echo "DEBUG: 환경변수 확인"
+          printenv | grep -E "(SMTP|SENDER|RECIPIENT)" || echo "No email vars found"
           python -m services.email_service
+        continue-on-error: true
 
       # Instagram/Threads는 pydantic 버전 충돌로 인해 추후 추가 예정
       # - name: Post to Instagram

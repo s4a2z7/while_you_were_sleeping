@@ -50,12 +50,23 @@ class EmailService:
         self.sender_password = os.getenv("SENDER_PASSWORD")
         self.recipient_email = os.getenv("RECIPIENT_EMAIL")
         
+        # 상세 디버깅 로그
+        logger.info("=" * 60)
+        logger.info("📧 이메일 서비스 설정 상태:")
+        logger.info(f"   SMTP_SERVER: {self.smtp_server}")
+        logger.info(f"   SMTP_PORT: {self.smtp_port}")
+        logger.info(f"   SENDER_EMAIL: {'✓ 설정됨' if self.sender_email else '✗ 미설정'}")
+        logger.info(f"   SENDER_PASSWORD: {'✓ 설정됨' if self.sender_password else '✗ 미설정'}")
+        logger.info(f"   RECIPIENT_EMAIL: {'✓ 설정됨' if self.recipient_email else '✗ 미설정'}")
+        logger.info("=" * 60)
+        
         # 필수 환경 변수 확인
         if not all([self.sender_email, self.sender_password, self.recipient_email]):
-            logger.warning("⚠️ 이메일 설정이 불완전합니다. 환경 변수를 확인하세요.")
-            logger.warning(f"   SENDER_EMAIL: {'✓' if self.sender_email else '✗'}")
-            logger.warning(f"   SENDER_PASSWORD: {'✓' if self.sender_password else '✗'}")
-            logger.warning(f"   RECIPIENT_EMAIL: {'✓' if self.recipient_email else '✗'}")
+            logger.error("❌ 필수 이메일 설정이 누락되었습니다!")
+            logger.error("   필요한 환경 변수:")
+            logger.error("   - SENDER_EMAIL")
+            logger.error("   - SENDER_PASSWORD (Gmail 앱 비밀번호)")
+            logger.error("   - RECIPIENT_EMAIL")
     
     def send_briefing_email(self, briefings: dict, markdown_file: Path = None) -> bool:
         """
@@ -69,14 +80,25 @@ class EmailService:
             발송 성공 여부
         """
         try:
-            logger.info("이메일 발송 준비 중...")
+            logger.info("=" * 60)
+            logger.info("📧 이메일 발송 준비 중...")
             
             # 필수 설정 확인
-            if not all([self.sender_email, self.sender_password, self.recipient_email]):
-                logger.error("❌ 이메일 설정이 불완전합니다.")
+            if not self.sender_email:
+                logger.error("❌ SENDER_EMAIL이 설정되지 않았습니다.")
+                logger.error("   GitHub Secrets 확인: Repository → Settings → Secrets → SENDER_EMAIL")
                 return False
             
-            # 이메일 메시지 생성
+            if not self.sender_password:
+                logger.error("❌ SENDER_PASSWORD(앱 비밀번호)이 설정되지 않았습니다.")
+                logger.error("   Gmail 앱 비밀번호 생성: https://myaccount.google.com")
+                return False
+            
+            if not self.recipient_email:
+                logger.error("❌ RECIPIENT_EMAIL이 설정되지 않았습니다.")
+                return False
+            
+            logger.info(f"✓ 발신자: {self.sender_email}")
             msg = MIMEMultipart('alternative')
             msg['Subject'] = f"당신이 잠든 사이 - 일일 주식 브리핑 ({datetime.now().strftime('%Y년 %m월 %d일')})"
             msg['From'] = self.sender_email
