@@ -1,0 +1,17 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# 인스타그램 서비스 전용 requirements
+RUN echo "instagrapi==1.16.30" > requirements_instagram.txt && \
+    echo "python-dotenv>=1.0.0" >> requirements_instagram.txt && \
+    echo "pillow>=10.0.0" >> requirements_instagram.txt
+
+RUN pip install --no-cache-dir -r requirements_instagram.txt
+
+# 서비스 파일 복사
+COPY backend/services/instagram_service.py .
+COPY backend/output ./output
+COPY .env .
+
+CMD ["python", "-c", "from services.instagram_service import main; main()"]

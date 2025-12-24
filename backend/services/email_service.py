@@ -15,6 +15,10 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 import sys
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 # 부모 디렉토리를 경로에 추가
 sys.path.insert(0, str(Path(__file__).parent.parent))

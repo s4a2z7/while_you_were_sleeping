@@ -32,29 +32,25 @@ jobs:
           python -m services.briefing_generator
 
       - name: Send Email
-        run: |
-          cd backend
-          python -m services.email_service
         env:
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+        run: |
+          cd backend
+          echo "이메일 설정 확인:"
+          echo "SENDER_EMAIL=$SENDER_EMAIL"
+          echo "SMTP_PORT=$SMTP_PORT"
+          python -m services.email_service
 
       # Instagram/Threads는 pydantic 버전 충돌로 인해 추후 추가 예정
       # - name: Post to Instagram
       #   run: |
       #     cd backend
+      #     pip install instagrapi
       #     python -m services.instagram_service
-      #   env:
-      #     INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
-      #     INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
-
-      # - name: Post to Threads
-      #   run: |
-      #     cd backend
-      #     python -m services.threads_service
       #   env:
       #     INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
       #     INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
