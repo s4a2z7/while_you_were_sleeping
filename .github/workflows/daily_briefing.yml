@@ -8,12 +8,6 @@ on:
 jobs:
   briefing:
     runs-on: ubuntu-latest
-    
-    # DNS 설정
-    container:
-      image: ubuntu:latest
-      options: --dns 8.8.8.8 --dns 1.1.1.1
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,10 +19,10 @@ jobs:
       
       - name: Fix DNS
         run: |
-          sudo echo "nameserver 8.8.8.8" > /etc/resolv.conf
-          sudo echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+          echo "nameserver 8.8.8.8" | tee /etc/resolv.conf
+          echo "nameserver 1.1.1.1" | tee -a /etc/resolv.conf
           echo "DNS 설정 확인:"
-          cat /etc/resolv.conf
+          cat /etc/resolv.conf || echo "resolv.conf 없음 (무시 가능)"
 
       - name: Install dependencies
         run: |
@@ -54,7 +48,7 @@ jobs:
         run: |
           cd backend
           echo "DEBUG: 네트워크 및 이메일 발송 시작"
-          timeout 120 python -m services.email_service || true
+          python -m services.email_service
         continue-on-error: true
 
       # Instagram/Threads는 pydantic 버전 충돌로 인해 추후 추가 예정
