@@ -40,8 +40,11 @@ jobs:
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
         run: |
           cd backend
+          echo "DEBUG: 네트워크 연결 테스트"
+          python -c "import socket; socket.gethostbyname('smtp.gmail.com')" || echo "DNS 해석 실패"
           echo "DEBUG: 환경변수 확인"
-          printenv | grep -E "(SMTP|SENDER|RECIPIENT)" || echo "No email vars found"
+          python -c "import os; [print(f'{k}=***') for k in ['SMTP_SERVER','SMTP_PORT','SENDER_EMAIL','SENDER_PASSWORD','RECIPIENT_EMAIL'] if os.getenv(k)]"
+          echo "DEBUG: 이메일 발송 시작"
           python -m services.email_service
         continue-on-error: true
 

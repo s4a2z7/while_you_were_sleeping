@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 import json
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -126,29 +127,69 @@ class EmailService:
                     encoders.encode_base64(part)
                     part.add_header('Content-Disposition', f'attachment; filename= {markdown_file.name}')
                     msg.attach(part)
-                    logger.info(f"   첨부 파일: {markdown_file.name}")
+                    logger.info(f"   ✓ 첨부 파일: {markdown_file.name}")
                 except Exception as e:
-                    logger.warning(f"첨부 파일 추가 실패: {e}")
+                    logger.warning(f"   ⚠️ 첨부 파일 추가 실패: {e}")
             
-            # 이메일 발송
-            logger.info(f"이메일 발송 중 ({self.sender_email} → {self.recipient_email})...")
+            # SMTP 연결 시도
+            logger.info(f"📡 SMTP 서버 연결 시도: {self.smtp_server}:{self.smtp_port}...")
             
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()
-                server.login(self.sender_email, self.sender_password)
-                server.send_message(msg)
-            
-            logger.info("✅ 이메일 발송 성공")
-            return True
-            
-        except smtplib.SMTPAuthenticationError:
-            logger.error("❌ SMTP 인증 실패. 이메일 주소와 비밀번호를 확인하세요.")
+            try:
+                with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
+                    logger.info("   ✓ SMTP 서버 연결 성공")
+                    
+                    # TLS 시작
+                    logger.info("   🔒 TLS 암호화 시작...")
+                    server.starttls()
+                    logger.info("   ✓ TLS 활성화 완료")
+                    
+                    # 로그인
+                    logger.info("   🔐 Gmail 인증 중...")
+                    server.login(self.sender_email, self.sender_password)
+                    logger.info("   ✓ 인증 성공")
+                    
+                    # 발송
+                    logger.info("   📤 이메일 발송 중...")
+                    server.send_message(msg)
+                    logger.info("   ✓ 이메일 발송 완료")
+                
+                logger.info("=" * 60)
+                logger.info("✅ 이메일 발송 성공")
+                logger.info("=" * 60)
+                return True
+                
+            except smtplib.SMTPAuthenticationError as e:
+                logger.error("❌ SMTP 인증 실패")
+                logger.error(f"   원인: {str(e)}")
+                logger.error("   확인사항:")
+                logger.error("   1. Gmail 주소가 정확한가?")
+                logger.error("   2. 앱 비밀번호가 올바른가? (16자리)")
+                logger.error("   3. 2단계 인증이 활성화되어 있는가?")
+                logger.error("   4. 앱 비밀번호를 최근에 생성했는가?")
+                return False
+                
+            except smtplib.SMTPException as e:
+                logger.error(f"❌ SMTP 오류: {str(e)}")
+                logger.error("   SMTP 서버 설정 확인: smtp.gmail.com:587")
+                return False
+            except smtplib.SMTPException as e:
+                logger.error(f"❌ SMTP 오류: {str(e)}")
+                logger.error("   SMTP 서버 설정 확인: smtp.gmail.com:587")
+                return False
+                
+        except socket.gaierror as e:
+            logger.error(f"❌ DNS 오류: {str(e)}")
+            logger.error("   SMTP 호스트를 찾을 수 없습니다.")
+            logger.error("   GitHub Actions 네트워크 설정 문제일 수 있습니다.")
             return False
-        except smtplib.SMTPException as e:
-            logger.error(f"❌ SMTP 오류: {str(e)}")
+            
+        except socket.timeout as e:
+            logger.error(f"❌ 연결 타임아웃: {str(e)}")
+            logger.error("   SMTP 서버 응답 시간 초과")
             return False
+            
         except Exception as e:
-            logger.error(f"❌ 이메일 발송 실패: {str(e)}")
+            logger.error(f"❌ 예기치 않은 오류: {str(e)}")
             import traceback
             logger.error(traceback.format_exc())
             return False
