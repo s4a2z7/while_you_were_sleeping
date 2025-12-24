@@ -136,12 +136,16 @@ class EmailService:
             # SMTP 연결 시도 (재시도 로직 포함)
             logger.info(f"📡 SMTP 서버 연결 시도: {self.smtp_server}:{self.smtp_port}...")
             
-            max_retries = 5
+            # GitHub Actions 환경에서는 더 많은 재시도 필요
+            max_retries = 10
+            last_error = None
+            
             for attempt in range(1, max_retries + 1):
                 try:
-                    # 타임아웃을 30초로 증가
+                    # 타임아웃을 30초로 설정
+                    logger.info(f"   시도 {attempt}/{max_retries}...")
                     with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
-                        logger.info(f"   ✓ SMTP 서버 연결 성공 (시도 {attempt}/{max_retries})")
+                        logger.info(f"   ✓ SMTP 서버 연결 성공")
                         
                         # TLS 시작
                         logger.info("   🔒 TLS 암호화 시작...")
@@ -163,10 +167,11 @@ class EmailService:
                     logger.info("=" * 60)
                     return True
                     
-                except (socket.gaierror, socket.timeout, OSError) as e:
+                except (socket.gaierror, socket.timeout, OSError, ConnectionError) as e:
+                    last_error = e
                     if attempt < max_retries:
-                        wait_time = 5 * attempt  # 5초, 10초, 15초, 20초, 25초
-                        logger.warning(f"   ⚠️ 연결 실패 (시도 {attempt}/{max_retries}): {str(e)}")
+                        wait_time = min(10 * attempt, 60)  # 최대 60초
+                        logger.warning(f"   ⚠️ 연결 실패: {type(e).__name__}: {str(e)}")
                         logger.warning(f"   🔄 {wait_time}초 후 재시도...")
                         time.sleep(wait_time)
                         continue
@@ -180,13 +185,18 @@ class EmailService:
                     logger.error("   1. Gmail 주소가 정확한가?")
                     logger.error("   2. 앱 비밀번호가 올바른가? (16자리)")
                     logger.error("   3. 2단계 인증이 활성화되어 있는가?")
-                    logger.error("   4. 앱 비밀번호를 최근에 생성했는가?")
                     return False
                     
                 except smtplib.SMTPException as e:
                     logger.error(f"❌ SMTP 오류: {str(e)}")
-                    logger.error("   SMTP 서버 설정 확인: smtp.gmail.com:587")
-                    return False
+                    last_error = e
+                    if attempt < max_retries:
+                        wait_time = min(10 * attempt, 60)
+                        logger.warning(f"   🔄 {wait_time}초 후 재시도...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        raise
             
         except socket.gaierror as e:
             logger.error(f"❌ DNS 오류: {str(e)}")
