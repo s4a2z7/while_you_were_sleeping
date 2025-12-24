@@ -33,7 +33,15 @@ class EmailService:
     def __init__(self):
         """이메일 서비스 초기화"""
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", 587))
+        
+        # SMTP_PORT 안전하게 처리
+        smtp_port_str = os.getenv("SMTP_PORT", "587")
+        try:
+            self.smtp_port = int(smtp_port_str) if smtp_port_str else 587
+        except (ValueError, TypeError):
+            self.smtp_port = 587
+            logger.warning(f"⚠️ 유효하지 않은 SMTP_PORT: {smtp_port_str}, 기본값 587 사용")
+        
         self.sender_email = os.getenv("SENDER_EMAIL")
         self.sender_password = os.getenv("SENDER_PASSWORD")
         self.recipient_email = os.getenv("RECIPIENT_EMAIL")
