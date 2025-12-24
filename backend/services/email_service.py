@@ -136,7 +136,7 @@ class EmailService:
             # SMTP 연결 시도 (재시도 로직 포함)
             logger.info(f"📡 SMTP 서버 연결 시도: {self.smtp_server}:{self.smtp_port}...")
             
-            max_retries = 3
+            max_retries = 5
             for attempt in range(1, max_retries + 1):
                 try:
                     # 타임아웃을 30초로 증가
@@ -163,11 +163,12 @@ class EmailService:
                     logger.info("=" * 60)
                     return True
                     
-                except (socket.gaierror, socket.timeout) as e:
+                except (socket.gaierror, socket.timeout, OSError) as e:
                     if attempt < max_retries:
+                        wait_time = 5 * attempt  # 5초, 10초, 15초, 20초, 25초
                         logger.warning(f"   ⚠️ 연결 실패 (시도 {attempt}/{max_retries}): {str(e)}")
-                        logger.warning(f"   🔄 5초 후 재시도...")
-                        time.sleep(5)
+                        logger.warning(f"   🔄 {wait_time}초 후 재시도...")
+                        time.sleep(wait_time)
                         continue
                     else:
                         raise
