@@ -206,6 +206,25 @@ class EmailService:
     
     def _create_html_content(self, briefings: dict) -> str:
         """HTML 이메일 콘텐츠 생성"""
+        
+        # briefings 타입 검증
+        if not isinstance(briefings, dict):
+            logger.warning(f"⚠️ briefings가 dict가 아닙니다: {type(briefings)}")
+            briefings = {}
+        
+        # 데이터 안전성 검증
+        most_actives = briefings.get("most_actives", [])
+        if not isinstance(most_actives, list):
+            most_actives = []
+        
+        day_gainers = briefings.get("day_gainers", [])
+        if not isinstance(day_gainers, list):
+            day_gainers = []
+            
+        day_losers = briefings.get("day_losers", [])
+        if not isinstance(day_losers, list):
+            day_losers = []
+        
         html = f"""
         <html>
             <head>
@@ -269,13 +288,13 @@ class EmailService:
                     <p><strong>생성일시:</strong> {datetime.now().strftime('%Y년 %m월 %d일 %H:%M:%S')}</p>
                     
                     <h2>🔥 가장 활발한 종목 (Most Actives)</h2>
-                    {self._create_table(briefings.get("most_actives", []))}
+                    {self._create_table(most_actives)}
                     
                     <h2>📈 상승 리더 (Day Gainers)</h2>
-                    {self._create_table(briefings.get("day_gainers", []))}
+                    {self._create_table(day_gainers)}
                     
                     <h2>📉 하락 리더 (Day Losers)</h2>
-                    {self._create_table(briefings.get("day_losers", []))}
+                    {self._create_table(day_losers)}
                     
                     <hr>
                     <p style="text-align: center; color: #666; font-size: 12px;">
@@ -289,18 +308,30 @@ class EmailService:
     
     def _create_table(self, stocks: list) -> str:
         """테이블 HTML 생성"""
+        # stocks 타입 검증
+        if not isinstance(stocks, list):
+            logger.warning(f"⚠️ stocks이 list가 아닙니다: {type(stocks)}")
+            return "<p>데이터 오류</p>"
+        
         if not stocks:
             return "<p>데이터 없음</p>"
         
         html = "<table><tr><th>종목코드</th><th>종목명</th><th>가격</th><th>변화율</th></tr>"
+        
         for stock in stocks:
-            change_class = "positive" if stock.get("change_percent", 0) > 0 else "negative"
-            change_pct = stock.get("change_percent", 0)
-            symbol = stock.get("symbol", "N/A")
-            name = stock.get("name", "N/A")
-            price = stock.get("price", 0)
-            
-            html += f"""
+            try:
+                # stock이 dict 타입인지 확인
+                if not isinstance(stock, dict):
+                    logger.warning(f"⚠️ stock이 dict가 아닙니다: {type(stock)}")
+                    continue
+                
+                change_pct = float(stock.get("change_percent", 0))
+                change_class = "positive" if change_pct > 0 else "negative"
+                symbol = str(stock.get("symbol", "N/A"))
+                name = str(stock.get("name", "N/A"))
+                price = float(stock.get("price", 0))
+                
+                html += f"""
             <tr>
                 <td><strong>{symbol}</strong></td>
                 <td>{name}</td>
@@ -308,6 +339,10 @@ class EmailService:
                 <td class="{change_class}">{change_pct:+.2f}%</td>
             </tr>
             """
+            except (TypeError, ValueError) as e:
+                logger.warning(f"⚠️ 주식 데이터 처리 오류: {stock} - {e}")
+                continue
+        
         html += "</table>"
         return html
 
