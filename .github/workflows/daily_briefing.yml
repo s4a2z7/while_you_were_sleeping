@@ -40,12 +40,8 @@ jobs:
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
         run: |
           cd backend
-          echo "DEBUG: 네트워크 연결 테스트"
-          python -c "import socket; socket.gethostbyname('smtp.gmail.com')" || echo "DNS 해석 실패"
-          echo "DEBUG: 환경변수 확인"
-          python -c "import os; [print(f'{k}=***') for k in ['SMTP_SERVER','SMTP_PORT','SENDER_EMAIL','SENDER_PASSWORD','RECIPIENT_EMAIL'] if os.getenv(k)]"
-          echo "DEBUG: 이메일 발송 시작"
-          python -m services.email_service
+          echo "DEBUG: 네트워크 및 이메일 발송 시작"
+          timeout 120 python -m services.email_service || true
         continue-on-error: true
 
       # Instagram/Threads는 pydantic 버전 충돌로 인해 추후 추가 예정

@@ -10,6 +10,7 @@ from pathlib import Path
 import json
 import smtplib
 import socket
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -131,33 +132,45 @@ class EmailService:
                 except Exception as e:
                     logger.warning(f"   ⚠️ 첨부 파일 추가 실패: {e}")
             
-            # SMTP 연결 시도
+            # SMTP 연결 시도 (재시도 로직 포함)
             logger.info(f"📡 SMTP 서버 연결 시도: {self.smtp_server}:{self.smtp_port}...")
             
-            try:
-                with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
-                    logger.info("   ✓ SMTP 서버 연결 성공")
+            max_retries = 3
+            for attempt in range(1, max_retries + 1):
+                try:
+                    # 타임아웃을 30초로 증가
+                    with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
+                        logger.info(f"   ✓ SMTP 서버 연결 성공 (시도 {attempt}/{max_retries})")
+                        
+                        # TLS 시작
+                        logger.info("   🔒 TLS 암호화 시작...")
+                        server.starttls()
+                        logger.info("   ✓ TLS 활성화 완료")
+                        
+                        # 로그인
+                        logger.info("   🔐 Gmail 인증 중...")
+                        server.login(self.sender_email, self.sender_password)
+                        logger.info("   ✓ 인증 성공")
+                        
+                        # 발송
+                        logger.info("   📤 이메일 발송 중...")
+                        server.send_message(msg)
+                        logger.info("   ✓ 이메일 발송 완료")
                     
-                    # TLS 시작
-                    logger.info("   🔒 TLS 암호화 시작...")
-                    server.starttls()
-                    logger.info("   ✓ TLS 활성화 완료")
+                    logger.info("=" * 60)
+                    logger.info("✅ 이메일 발송 성공")
+                    logger.info("=" * 60)
+                    return True
                     
-                    # 로그인
-                    logger.info("   🔐 Gmail 인증 중...")
-                    server.login(self.sender_email, self.sender_password)
-                    logger.info("   ✓ 인증 성공")
-                    
-                    # 발송
-                    logger.info("   📤 이메일 발송 중...")
-                    server.send_message(msg)
-                    logger.info("   ✓ 이메일 발송 완료")
-                
-                logger.info("=" * 60)
-                logger.info("✅ 이메일 발송 성공")
-                logger.info("=" * 60)
-                return True
-                
+                except (socket.gaierror, socket.timeout) as e:
+                    if attempt < max_retries:
+                        logger.warning(f"   ⚠️ 연결 실패 (시도 {attempt}/{max_retries}): {str(e)}")
+                        logger.warning(f"   🔄 5초 후 재시도...")
+                        time.sleep(5)
+                        continue
+                    else:
+                        raise
+                        
             except smtplib.SMTPAuthenticationError as e:
                 logger.error("❌ SMTP 인증 실패")
                 logger.error(f"   원인: {str(e)}")
