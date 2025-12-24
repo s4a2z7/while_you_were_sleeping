@@ -31,25 +31,14 @@ jobs:
           cd backend
           python -m services.briefing_generator
 
-      - name: Send Email
-        env:
-          SMTP_SERVER: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
-          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
-          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+      - name: Commit and Push Results
         run: |
-          cd backend
-          echo "📧 이메일 발송 중..."
-          python -m services.email_service
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add output/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update: Daily briefing results $(date -u +'%Y-%m-%d')" && git push)
         continue-on-error: true
 
-      # Instagram/Threads는 pydantic 버전 충돌로 인해 추후 추가 예정
-      # - name: Post to Instagram
-      #   run: |
-      #     cd backend
-      #     pip install instagrapi
-      #     python -m services.instagram_service
-      #   env:
-      #     INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
-      #     INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
+      # 📧 이메일 발송은 로컬 Windows Task Scheduler를 사용하세요
+      # GitHub Actions의 보안 정책으로 인해 외부 SMTP 연결이 차단되어 있습니다
+      # 설정 가이드: TASK_SCHEDULER_SETUP.md 참고
