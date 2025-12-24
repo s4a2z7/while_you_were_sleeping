@@ -39,7 +39,7 @@ jobs:
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update: Daily briefing results $(date -u +'%Y-%m-%d')" && git push)
         continue-on-error: true
 
-  # 📱 Docker를 이용한 인스타그램 게시
+  # 📱 인스타그램 게시
   instagram:
     needs: briefing
     runs-on: ubuntu-latest
@@ -47,21 +47,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Instagram Dependencies
         run: |
-          docker build -f Dockerfile.instagram -t instagram-poster:latest .
+          pip install --upgrade pip setuptools wheel
+          pip install instagrapi>=2.0.0 python-dotenv pillow requests cryptography
+        continue-on-error: true
 
       - name: Post to Instagram
         env:
           INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
           INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
         run: |
-          docker run --rm \
-            -e INSTAGRAM_USERNAME=${{ secrets.INSTAGRAM_USERNAME }} \
-            -e INSTAGRAM_PASSWORD=${{ secrets.INSTAGRAM_PASSWORD }} \
-            -v "${{ github.workspace }}/output/images:/app/output/images:ro" \
-            -v "${{ github.workspace }}/output/data:/app/output/data:ro" \
-            instagram-poster:latest
+          cd backend
+          python -m services.instagram_service
+        continue-on-error: true
 
       - name: Post Success
         if: success()
