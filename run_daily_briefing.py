@@ -57,7 +57,7 @@ def run_briefing():
         logger.info("✅ 브리핑 생성 완료")
         
         # 3. 이메일 발송
-        logger.info("\n[3/3] 이메일 발송 중...")
+        logger.info("\n[3/4] 이메일 발송 중...")
         result = subprocess.run(
             [sys.executable, "-m", "services.email_service"],
             cwd=backend_dir,
@@ -65,10 +65,38 @@ def run_briefing():
             text=True
         )
         if result.returncode != 0:
-            logger.error(f"⚠️  이메일 발송 실패 (무시):\n{result.stderr}")
+            logger.warning(f"⚠️  이메일 발송 실패 (무시):\n{result.stderr}")
             logger.info("💡 로컬 .env 파일의 이메일 설정을 확인하세요.")
         else:
             logger.info("✅ 이메일 발송 완료")
+        
+        # 4. 인스타그램 발송
+        logger.info("\n[4/5] 인스타그램 발송 중...")
+        result = subprocess.run(
+            [sys.executable, "-m", "services.instagram_service"],
+            cwd=backend_dir,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            logger.warning(f"⚠️  인스타그램 발송 실패 (무시):\n{result.stderr}")
+            logger.info("💡 .env 파일의 INSTAGRAM_USERNAME과 INSTAGRAM_PASSWORD를 설정하세요.")
+        else:
+            logger.info("✅ 인스타그램 발송 완료")
+        
+        # 5. Threads 발송
+        logger.info("\n[5/5] Threads 발송 중...")
+        result = subprocess.run(
+            [sys.executable, "-m", "services.threads_service"],
+            cwd=backend_dir,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            logger.warning(f"⚠️  Threads 발송 실패 (무시):\n{result.stderr}")
+            logger.info("💡 .env 파일의 INSTAGRAM_USERNAME과 INSTAGRAM_PASSWORD를 설정하세요.")
+        else:
+            logger.info("✅ Threads 발송 완료")
         
         logger.info("\n" + "=" * 60)
         logger.info("✅ 일일 주식 브리핑 자동화 완료")
