@@ -42,18 +42,19 @@ jobs:
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
 
-      - name: Post to Instagram
-        run: |
-          cd backend
-          python -m services.instagram_service
-        env:
-          INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
-          INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
+      # Instagram/Threads는 pydantic 버전 충돌로 인해 추후 추가 예정
+      # - name: Post to Instagram
+      #   run: |
+      #     cd backend
+      #     python -m services.instagram_service
+      #   env:
+      #     INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
+      #     INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
 
-      - name: Post to Threads
-        run: |
-          cd backend
-          python -m services.threads_service
-        env:
-          INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
-          INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
+      # - name: Post to Threads
+      #   run: |
+      #     cd backend
+      #     python -m services.threads_service
+      #   env:
+      #     INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
+      #     INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
