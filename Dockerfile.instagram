@@ -1,0 +1,18 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# 의존성 설치
+COPY backend/requirements_instagram.txt .
+RUN pip install --no-cache-dir -r requirements_instagram.txt
+
+# 애플리케이션 파일 복사
+COPY backend/ .
+
+# 환경변수 설정 (실행 시 override 가능)
+ENV PYTHONUNBUFFERED=1
+ENV INSTAGRAM_USERNAME=""
+ENV INSTAGRAM_PASSWORD=""
+
+# 인스타그램 서비스 실행
+CMD ["python", "-m", "services.instagram_service"]

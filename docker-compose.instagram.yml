@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # 인스타그램 자동 게시 서비스 (매일 07:00 AM 실행)
+  instagram-poster:
+    build:
+      context: .
+      dockerfile: Dockerfile.instagram
+    container_name: instagram-auto-poster
+    environment:
+      INSTAGRAM_USERNAME: ${INSTAGRAM_USERNAME}
+      INSTAGRAM_PASSWORD: ${INSTAGRAM_PASSWORD}
+      PYTHONUNBUFFERED: 1
+    volumes:
+      # 브리핑 이미지 공유
+      - ./output/images:/app/output/images:ro
+      - ./output/data:/app/output/data:ro
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # 선택: 특정 시간에 주기적으로 실행
+    # 주석 해제하려면 cron 확장 설치 필요
+    # schedules:
+    #   - cron: "0 7 * * *"  # 매일 07:00 AM
+
+  # (옵션) 브리핑 생성 서비스 함께 실행하려면:
+  # briefing-generator:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   command: ["python", "-m", "services.briefing_generator"]
+  #   volumes:
+  #     - ./output:/app/output
