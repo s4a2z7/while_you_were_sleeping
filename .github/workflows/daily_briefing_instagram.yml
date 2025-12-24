@@ -39,42 +39,10 @@ jobs:
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update: Daily briefing results $(date -u +'%Y-%m-%d')" && git push)
         continue-on-error: true
 
-  # 📱 인스타그램 게시
-  instagram:
-    needs: briefing
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Instagram Dependencies
+      - name: Notify Completion
         run: |
-          pip install --upgrade pip setuptools wheel
-          pip install instagrapi>=2.0.0 python-dotenv pillow requests cryptography
-        continue-on-error: true
+          echo "✅ Daily briefing generation completed"
+          echo "📱 Instagram posting will be handled by local Windows Task Scheduler"
+          echo "   Files ready: output/images/briefing_card_*.png"
+          echo "   Stock data: output/data/screener_results_*.json"
 
-      - name: Post to Instagram
-        env:
-          INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
-          INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
-        run: |
-          cd backend
-          python -m services.instagram_service
-        continue-on-error: true
-
-      - name: Post Success
-        if: success()
-        run: |
-          echo "✅ Instagram posting completed successfully"
-          echo "Check your Instagram profile for the new post!"
-
-      - name: Post Failed
-        if: failure()
-        run: |
-          echo "❌ Instagram posting failed"
-          echo "Check GitHub Actions logs for details"
