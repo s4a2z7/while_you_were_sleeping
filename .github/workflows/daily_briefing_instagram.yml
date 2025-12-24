@@ -1,0 +1,76 @@
+name: Daily Stock Briefing with Instagram Posting
+
+on:
+  schedule:
+    - cron: '0 22 * * *'  # UTC 22:00 = KST 07:00
+  workflow_dispatch:
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Get Trending Stocks
+        run: |
+          cd backend
+          python -m services.screener_service
+
+      - name: Generate Briefing
+        run: |
+          cd backend
+          python -m services.briefing_generator
+
+      - name: Commit and Push Results
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add output/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update: Daily briefing results $(date -u +'%Y-%m-%d')" && git push)
+        continue-on-error: true
+
+  # 📱 Docker를 이용한 인스타그램 게시
+  instagram:
+    needs: briefing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build -f Dockerfile.instagram -t instagram-poster:latest .
+
+      - name: Post to Instagram
+        env:
+          INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
+          INSTAGRAM_PASSWORD: ${{ secrets.INSTAGRAM_PASSWORD }}
+        run: |
+          docker run --rm \
+            -e INSTAGRAM_USERNAME=${{ secrets.INSTAGRAM_USERNAME }} \
+            -e INSTAGRAM_PASSWORD=${{ secrets.INSTAGRAM_PASSWORD }} \
+            -v "${{ github.workspace }}/output/images:/app/output/images:ro" \
+            -v "${{ github.workspace }}/output/data:/app/output/data:ro" \
+            instagram-poster:latest
+
+      - name: Post Success
+        if: success()
+        run: |
+          echo "✅ Instagram posting completed successfully"
+          echo "Check your Instagram profile for the new post!"
+
+      - name: Post Failed
+        if: failure()
+        run: |
+          echo "❌ Instagram posting failed"
+          echo "Check GitHub Actions logs for details"
